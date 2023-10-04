@@ -1,8 +1,8 @@
-'use strict';
 const snoowrap = require("snoowrap");
 require('dotenv').config();
 
-const r = new snoowrap({
+function postLink(title, link, subreddit){
+  const r = new snoowrap({
     userAgent: process.env.userAgent,
     clientId: process.env.clientId,
     clientSecret: process.env.clientSecret,
@@ -10,5 +10,12 @@ const r = new snoowrap({
     username: process.env.username,
     password: process.env.password
   });
+  
+  r.getSubreddit('test_automation').submitLink({
+    title: title,
+    url: link,
+    sendReplies: false
+  });
+}
 
-  r.getHot().map(post => post.title).then(console.log);
+postLink('test post', 'https://www.wikipedia.org', 'test_automation');
