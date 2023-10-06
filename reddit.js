@@ -2,15 +2,6 @@ require('dotenv').config();
 const spotifyWebApi = require('spotify-web-api-node');
 const snoowrap = require("snoowrap");
 
-const spotify = new spotifyWebApi({
-  clientId: process.env.S_CLIENT_ID,
-  clientSecret: process.env.S_CLIENT_SECRET,
-  redirectUri: 'http://localhost:8888/callback'
-});
-
-spotify.setAccessToken(process.env.S_ACCESS_TOKEN);
-spotify.setRefreshToken(process.env.S_REFRESH_TOKEN);
-
 const reddit = new snoowrap({
   userAgent: process.env.R_USER_AGENT,
   clientId: process.env.R_CLIENT_ID,
@@ -20,7 +11,28 @@ const reddit = new snoowrap({
   password: process.env.R_PASS
 });
 
+const spotify = new spotifyWebApi({
+  clientId: process.env.S_CLIENT_ID,
+  clientSecret: process.env.S_CLIENT_SECRET,
+  refreshToken: process.env.S_REFRESH_TOKEN,
+  redirectUri: 'http://localhost:8888/callback'
+});
+
+spotify.setAccessToken(process.env.S_ACCESS_TOKEN);
+spotify.setRefreshToken(process.env.S_REFRESH_TOKEN);
+
 function refreshTracksList(){
+  spotify.refreshAccessToken().then(
+    function(data) {
+      console.log('The access token has been refreshed!');
+  
+      // Save the access token so that it's used in future calls
+        spotify.setAccessToken(data.body['access_token'].toString());
+    },
+    function(err) {
+      console.log('Could not refresh access token', err);
+    }
+  );
 
   spotify.getPlaylistTracks(process.env.S_PLAYLIST).then(
     function(data) {
@@ -43,10 +55,11 @@ function postLink(title, link, subreddit){
   });
 }
 
-let tracks = refreshTracksList();
+refreshTracksList();
 
-// let postInterval = setInterval(() => {
-//   postLink('test post', 'https://www.wikipedia.org', 'test_automation');
-// }, 5000);
+let postInterval = setInterval(() => {
+  refreshTracksList();
+  // postLink('test post', 'https://www.wikipedia.org', 'test_automation');
+}, 10000);
 
 // clearInterval(interval); // stops posting
