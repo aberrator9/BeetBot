@@ -18,23 +18,23 @@ const spotify = new spotifyWebApi({
   redirectUri: 'http://localhost:8888/callback'
 });
 
-spotify.setAccessToken(process.env.S_ACCESS_TOKEN);
+// spotify.setAccessToken(process.env.S_ACCESS_TOKEN);
 spotify.setRefreshToken(process.env.S_REFRESH_TOKEN);
 
-function refreshTracksList(){
-  spotify.refreshAccessToken().then(
+async function refreshTracksList(){
+  await spotify.refreshAccessToken().then(
     function(data) {
       console.log('The access token has been refreshed!');
   
       // Save the access token so that it's used in future calls
-        spotify.setAccessToken(data.body['access_token'].toString());
+        spotify.setAccessToken(data.body['access_token']);
     },
     function(err) {
       console.log('Could not refresh access token', err);
     }
   );
 
-  spotify.getPlaylistTracks(process.env.S_PLAYLIST).then(
+  await spotify.getPlaylistTracks(process.env.S_PLAYLIST).then(
     function(data) {
       // console.log("Tony Hawk...", data.body.items);
       for (let i = 0; i < data.body.items.length; i++) {
@@ -55,7 +55,7 @@ function postLink(title, link, subreddit){
   });
 }
 
-refreshTracksList();
+// refreshTracksList();
 
 let postInterval = setInterval(() => {
   refreshTracksList();
