@@ -2,6 +2,7 @@ require('dotenv').config();
 const spotifyWebApi = require('spotify-web-api-node');
 const snoowrap = require('snoowrap');
 const google = require('googleapis');
+const fs = require('fs');
 
 const reddit = new snoowrap({
   userAgent: process.env.R_USER_AGENT,
@@ -19,6 +20,25 @@ const spotify = new spotifyWebApi({
   redirectUri: 'http://localhost:8888/callback'
 });
 
+function loadPostedTracks() {
+  try {
+    const data = fs.readFileSync('postedTracks.json', 'utf8');
+    return JSON.parse(data) || [];
+  } catch (error) {
+    console.error('Error loading posted tracks:', error);
+    return [];
+  }
+}
+
+function savePostedTracks() {
+  try {
+    fs.writeFileSync('postedTracks.json', JSON.stringify(postedTracks), 'utf8');
+  } catch (error) {
+    console.error('Error saving posted tracks:', error);
+  }
+}
+
+let postedTracks = loadPostedTracks();
 let tracks = [];
 spotify.setRefreshToken(process.env.S_REFRESH_TOKEN);
 
@@ -61,10 +81,11 @@ async function refreshTracksList() {
       let temp = [];
       for (let i = 0; i < data.body.items.length; i++) {
         let track = data.body.items[i].track;
+
         console.log('Adding', track.artists[0].name, '-', track.name);
-        
+
         let genre = await getGenre(track.artists[0])
-        temp.push(`${track.artists[0].name} - ${track.name} [${genre}] (${track.album.release_date.substring(0,4)}):${track.id}`);
+        temp.push(`${track.artists[0].name} - ${track.name} [${genre}] (${track.album.release_date.substring(0, 4)}):${track.id}`);
       }
       return temp;
     },
@@ -76,13 +97,7 @@ async function refreshTracksList() {
 
 async function removeTrackFromPlaylist(playlistId, trackId) {
   try {
-    const response = await spotify.removeTracksFromPlaylist(playlistId, [{ uri: `spotify:track:${trackId}` }]);
-    
-    if (response.body.snapshot_id) {
-      console.log('Track removed successfully');
-    } else {
-      console.error('Error removing track:', response.body);
-    }
+    await spotify.removeTracksFromPlaylist(playlistId, [{ uri: `spotify:track:${trackId}` }]);
   } catch (error) {
     console.error('Error removing track:', error);
   }
@@ -129,16 +144,23 @@ let postInterval = setInterval(async () => {
   }
 
   if (tracks.length <= 0) {
-    console.log("---");
     console.log('---', '\n', `[${new Date(Date.now()).toLocaleString()}] No new tracks to post!`, '\n', '---')
     return;
   }
 
   // let url = await searchYoutube(tracks[tracks.length - 1]);
-  let url = 'url';
+  let url = 'https://wikipedia.org';
   let trackAndId = tracks[tracks.length - 1].split(':');
-  // postRedditLink(trackAndId[0], url, 'test_automation');
-  console.log(`[${new Date(Date.now()).toLocaleString()}]`, 'Posted', trackAndId[0], `from ${url}`);
+
+  if (!postedTracks.includes(trackAndId[1])) {
+    // postRedditLink(trackAndId[0], url, 'test_automation');
+    console.log(`[${new Date(Date.now()).toLocaleString()}]`, 'Posted', trackAndId[0], `from ${url}`);
+
+    postedTracks.push(trackAndId[1]);
+    savePostedTracks();
+  } else {
+    console.warn('Track', trackAndId, 'already posted; removing from playlist.')
+  }
 
   removeTrackFromPlaylist(process.env.S_PLAYLIST, trackAndId[1]);
   tracks.pop();
