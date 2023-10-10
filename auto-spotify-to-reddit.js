@@ -127,7 +127,7 @@ async function searchYoutube(query) {
       let similarity = stringSimilarity.compareTwoStrings(videos[0].snippet.title, query)
       console.log(`Youtube returned ${videos[0].snippet.title}, has a similarity of ${similarity} to ${query}`);
 
-      if (similarity < 0.85) {
+      if (similarity <= 0.6) {
         // Retry comparison with channel name
         const withChannelTitle = videos[0].snippet.channelTitle.split('-')[0] + '- ' + videos[0].snippet.title;
         similarity = stringSimilarity.compareTwoStrings(withChannelTitle, query);
@@ -135,7 +135,7 @@ async function searchYoutube(query) {
         console.log('With channel title, new similarity score is ', similarity, withChannelTitle);
       }
 
-      if (similarity > 0.95) {
+      if (similarity > 0.6) {
         return `https://www.youtube.com/watch?v=${videos[0].id.videoId}`;
       } else {
         return '';
@@ -176,8 +176,6 @@ setInterval(async () => {
     let url = await searchYoutube(tracks[tracks.length - 1].split('[')[0]);
 
     if (url != '') {
-      console.log(`Searched youtube for ${tracks[tracks.length - 1].split('[')[0]}`);
-
       // postRedditLink(trackAndId[0], url, 'test_automation');
       postRedditLink(trackAndId[0], url, 'Music');
       postRedditLink(trackAndId[0], url, 'listentothis');
@@ -193,6 +191,6 @@ setInterval(async () => {
 
   removeTrackFromPlaylist(process.env.S_PLAYLIST, trackAndId[1]);
   tracks.pop();
-}, postInterval);
+}, postInterval + Math.floor(Math.random() * 3600000));
 
-console.log(`Script started at ${getTimeStamp()}; first post will occur at ${new Date(Date.now() + postInterval).toLocaleString()}`);
+console.log(`Script started at ${getTimeStamp()}; first post will occur at ${new Date(Date.now() + postInterval).toLocaleString()} plus a random amount <= 1 hr.`);
