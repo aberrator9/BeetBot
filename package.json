@@ -5,6 +5,7 @@
     "fs": "^0.0.1-security",
     "googleapis": "^126.0.1",
     "snoowrap": "^1.15.2",
-    "spotify-web-api-node": "^5.0.2"
+    "spotify-web-api-node": "^5.0.2",
+    "string-similarity": "^4.0.4"
   }
 }
