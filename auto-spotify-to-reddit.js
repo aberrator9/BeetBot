@@ -157,7 +157,7 @@ function postRedditLink(title, link, subreddit) {
   });
 }
 
-let postInterval = 4000; // 12 hrs
+let postInterval = 43200000; // 12 hrs
 
 setInterval(async () => {
 
