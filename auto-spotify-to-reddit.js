@@ -177,7 +177,7 @@ setInterval(async () => {
 
     if (url != '') {
       // postRedditLink(trackAndId[0], url, 'test_automation');
-      postRedditLink(trackAndId[0], url, 'Music');
+      // postRedditLink(trackAndId[0], url, 'Music'); // Needs flair and link to official channel
       postRedditLink(trackAndId[0], url, 'listentothis');
 
       console.log('---\n', `[${getTimeStamp()}]`, 'Posted', trackAndId[0], `from ${url}`);
