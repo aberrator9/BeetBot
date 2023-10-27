@@ -45,6 +45,8 @@ function savePostedTracks() {
 
 const postedTracks = loadPostedTracks();
 let cachedTracks = [];
+const MIN_SIMILARITY_THRESHOLD = 0.6;
+
 spotify.setRefreshToken(process.env.S_REFRESH_TOKEN);
 
 async function getGenre(artist) {
@@ -129,7 +131,7 @@ async function searchYoutube(query) {
       let similarity = stringSimilarity.compareTwoStrings(videos[0].snippet.title, query);
       console.log(`Youtube returned ${videos[0].snippet.title}, has a similarity of ${similarity} to ${query}`);
 
-      if (similarity <= 0.6) {
+      if (similarity <= MIN_SIMILARITY_THRESHOLD) {
         // Retry comparison with channel name
         const withChannelTitle = videos[0].snippet.channelTitle.split('-')[0] + '- ' + videos[0].snippet.title;
         similarity = stringSimilarity.compareTwoStrings(withChannelTitle.toLowerCase(), query.toLowerCase());
@@ -137,7 +139,7 @@ async function searchYoutube(query) {
         console.log('With channel title, new similarity score is ', similarity, withChannelTitle);
       }
 
-      if (similarity > 0.6) {
+      if (similarity > MIN_SIMILARITY_THRESHOLD) {
         return `https://www.youtube.com/watch?v=${videos[0].id.videoId}`;
       } else {
         return '';
@@ -178,15 +180,9 @@ setInterval(async () => {
     const url = await searchYoutube(cachedTrack.postTitle.split('[')[0]); // Search without genre name and year
 
     if (url != '') {
-<<<<<<< HEAD
       postRedditLink(cachedTrack.postTitle, url, 'test_automation'); // My private subreddit for testing. Request invite here:
       // ... 'Music');          // Check subreddit rules for each, fairly strict
       // ... 'listentothis');
-=======
-      // postRedditLink(trackAndId[0], url, 'test_automation');
-      // postRedditLink(trackAndId[0], url, 'Music'); // Needs flair and link to official channel
-      postRedditLink(trackAndId[0], url, 'listentothis');
->>>>>>> 3f264f46719a34deec58a9964ef9db796f78e0ce
 
       console.log('---\n', `[${getTimeStamp()}]`, 'Posted', cachedTrack.postTitle, `from ${url}`);
 
@@ -202,8 +198,4 @@ setInterval(async () => {
 }, postInterval);
 // }, postInterval + Math.floor(Math.random() * 3600000));
 
-<<<<<<< HEAD
 console.log(`Script started at ${getTimeStamp()}; first post will occur at ${getTimeStamp(postInterval).toLocaleString()} plus a random amount < 1 hr.`);
-=======
-console.log(`Script started at ${getTimeStamp()}; first post will occur at ${new Date(Date.now() + postInterval).toLocaleString()} plus a random amount < 1 hr.`);
->>>>>>> 3f264f46719a34deec58a9964ef9db796f78e0ce
