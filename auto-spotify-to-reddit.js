@@ -21,8 +21,8 @@ const spotify = new spotifyWebApi({
   redirectUri: 'http://localhost:8888/callback'
 });
 
-function getTimeStamp() {
-  return new Date(Date.now()).toLocaleString();
+function getTimeStamp(offset = 0) {
+  return new Date(Date.now() + offset).toLocaleString();
 }
 
 function loadPostedTracks() {
@@ -30,7 +30,7 @@ function loadPostedTracks() {
     const data = fs.readFileSync('postedTracks.json', 'utf8');
     return JSON.parse(data) || [];
   } catch (error) {
-    console.error('Error loading posted tracks:', error);
+    console.log('Error loading posted tracks:', error);
     return [];
   }
 }
@@ -39,12 +39,12 @@ function savePostedTracks() {
   try {
     fs.writeFileSync('postedTracks.json', JSON.stringify(postedTracks), 'utf8');
   } catch (error) {
-    console.error('Error saving posted tracks:', error);
+    console.log('Error saving posted tracks:', error);
   }
 }
 
-let postedTracks = loadPostedTracks();
-let tracks = [];
+const postedTracks = loadPostedTracks();
+let cachedTracks = [];
 spotify.setRefreshToken(process.env.S_REFRESH_TOKEN);
 
 async function getGenre(artist) {
@@ -53,18 +53,17 @@ async function getGenre(artist) {
       const artistInfo = await spotify.getArtist(artist.id);
 
       if (artistInfo.body.genres.length > 0) {
-        const genre = artistInfo.body.genres[0];
         return artistInfo.body.genres[0];
       } else {
-        return 'indie';
+        return 'indie'; // Funny, but probably a better solution
       }
     } else {
-      console.warn('No artist provided.');
-      return null;
+      console.log('No artist provided.');
+      return '';
     }
   } catch (error) {
-    console.error('Error:', error);
-    return null;
+    console.log('Error:', error);
+    return '';
   }
 }
 
@@ -82,22 +81,25 @@ async function refreshTracksList() {
     async function (data) {
       let temp = [];
       for (let i = 0; i < data.body.items.length; i++) {
-        let track = data.body.items[i].track;
+        const track = data.body.items[i].track;
+        const artist =  track.artists[0].name;
+        const id = track.id;
+        const song = track.name;
 
-        if (postedTracks.includes(track.id)) {
-          console.warn('Track', `${track.artists[0].name} - ${track.name}`, 'already posted; removing from playlist.')
-          await removeTrackFromPlaylist(process.env.S_PLAYLIST, track.id);
+        if (cachedTracks.includes(id) || postedTracks.includes(id)) {
+          console.log('Track', `${artist} - ${song}`, 'already posted; removing from playlist.')
+          await removeTrackFromPlaylist(process.env.S_PLAYLIST, id);
         } else {
-          console.log('Adding', track.artists[0].name, '-', track.name);
+          console.log('Adding', artist, '-', song);
 
-          let genre = await getGenre(track.artists[0])
-          temp.push(`${track.artists[0].name} - ${track.name} [${genre}] (${track.album.release_date.substring(0, 4)}):${track.id}`);
+          const genre = await getGenre(track.artists[0])
+          temp.push({postTitle: `${artist} - ${song} [${genre}] (${track.album.release_date.substring(0, 4)})`, id: id});
         }
       }
       return temp;
     },
     function (err) {
-      console.error(err);
+      console.log(err);
     }
   );
 }
@@ -106,7 +108,7 @@ async function removeTrackFromPlaylist(playlistId, trackId) {
   try {
     await spotify.removeTracksFromPlaylist(playlistId, [{ uri: `spotify:track:${trackId}` }]);
   } catch (error) {
-    console.error('Error removing track:', error);
+    console.log('Error removing track:', error);
   }
 }
 
@@ -141,11 +143,10 @@ async function searchYoutube(query) {
         return '';
       }
     } else {
-      console.error(`Error: ${response.statusText}`);
-      console.error(data);
+      console.log(`Error: ${response.statusText}`);
     }
   } catch (error) {
-    console.error("Error fetching data:", error);
+    console.log("Error fetching data:", error);
   }
 }
 
@@ -157,40 +158,42 @@ function postRedditLink(title, link, subreddit) {
   });
 }
 
-let postInterval = 28800000; // 8 hrs
+// const postInterval = 28800000; // 8 hrs
+const postInterval = 5000;
 
 setInterval(async () => {
 
-  if (tracks.length <= 0) {
-    tracks = await refreshTracksList();
+  if (cachedTracks.length <= 0) {
+    cachedTracks = await refreshTracksList();
   }
 
-  if (tracks.length <= 0) {
-    console.log('---\n', `[${getTimeStamp()}] No new tracks to post! Trying again at ${new Date(Date.now() + postInterval).toLocaleString()}`)
+  if (cachedTracks.length <= 0) {
+    console.log('---\n', `[${getTimeStamp()}] No new tracks to post! Trying again at ${getTimeStamp(postInterval).toLocaleString()}`)
     return;
   }
 
-  let trackAndId = tracks[tracks.length - 1].split(':');
+  const cachedTrack = cachedTracks[cachedTracks.length - 1];
 
-  if (!postedTracks.includes(trackAndId[1])) {
-    let url = await searchYoutube(tracks[tracks.length - 1].split('[')[0]);
+  if (!postedTracks.includes(cachedTrack.id)) {
+    const url = await searchYoutube(cachedTrack.postTitle.split('[')[0]); // Search without genre name and year
 
     if (url != '') {
-      // postRedditLink(trackAndId[0], url, 'test_automation');
-      postRedditLink(trackAndId[0], url, 'Music');
-      postRedditLink(trackAndId[0], url, 'listentothis');
+      postRedditLink(cachedTrack.postTitle, url, 'test_automation'); // My private subreddit for testing. Request invite here:
+      // ... 'Music');          // Check subreddit rules for each, fairly strict
+      // ... 'listentothis');
 
-      console.log('---\n', `[${getTimeStamp()}]`, 'Posted', trackAndId[0], `from ${url}`);
+      console.log('---\n', `[${getTimeStamp()}]`, 'Posted', cachedTrack.postTitle, `from ${url}`);
 
-      postedTracks.push(trackAndId[1]);
+      postedTracks.push(cachedTrack.id);
       savePostedTracks();
     }
   } else {
-    console.warn('Track', trackAndId, 'already posted; removing from playlist.')
+    console.log('Track', cachedTrack.postTitle, 'already posted; removing from playlist.')
   }
 
-  removeTrackFromPlaylist(process.env.S_PLAYLIST, trackAndId[1]);
-  tracks.pop();
-}, postInterval + Math.floor(Math.random() * 3600000));
+  removeTrackFromPlaylist(process.env.S_PLAYLIST, cachedTrack.id);
+  cachedTracks.pop();
+}, postInterval);
+// }, postInterval + Math.floor(Math.random() * 3600000));
 
-console.log(`Script started at ${getTimeStamp()}; first post will occur at ${new Date(Date.now() + postInterval).toLocaleString()} plus a random amount < 1 hr.`);
+console.log(`Script started at ${getTimeStamp()}; first post will occur at ${getTimeStamp(postInterval).toLocaleString()} plus a random amount < 1 hr.`);
