@@ -1,4 +1,4 @@
-const dotenv =  require('dotenv');
+const dotenv = require('dotenv');
 const fetch = require('node-fetch');
 const spotifyWebApi = require('spotify-web-api-node');
 const snoowrap = require('snoowrap');
@@ -11,7 +11,7 @@ const repo = 'https://github.com/aberrator9/automation';
 const localEnv = dotenv.config();
 
 function checkForEnvironmentVariables() {
-  if(!fs.existsSync('.env')){
+  if (!fs.existsSync('.env')) {
     const envContent = `R_CLIENT_ID=''\nR_CLIENT_SECRET=''\nR_REFRESH_TOKEN=''\nR_ACCESS_TOKEN=''\nR_USER=''\nR_PASS=''\nS_CLIENT_ID=''\nS_CLIENT_SECRET=''\nS_ACCESS_TOKEN=''\nS_REFRESH_TOKEN=''\nS_PLAYLIST=''\nY_API_KEY=''`;
     fs.writeFileSync('.env', envContent);
     console.log(`.env file created in local directory, but you will need to finish setting it up! See ${repo} for setup instructions.`)
@@ -19,7 +19,7 @@ function checkForEnvironmentVariables() {
     process.exit();
   } else {
     const missingValues = Object.entries(localEnv.parsed).filter(([key, value]) => value === '');
-    if(missingValues.length > 0) {
+    if (missingValues.length > 0) {
       console.log(`.env file is missing required values! See ${repo} for setup instructions.`);
       console.log('Exiting...');
       process.exit();
@@ -30,7 +30,16 @@ function checkForEnvironmentVariables() {
   }
 }
 
+function checkForFile(filename) {
+  if(!fs.existsSync(filename)) {
+    fs.writeFileSync(filename, '[]');
+  }
+  return filename;
+}
+
 checkForEnvironmentVariables();
+const postedJson = checkForFile('posted.json');
+const notPostedJson = checkForFile('notPosted.json');
 
 const reddit = new snoowrap({
   userAgent: 'anything',
@@ -54,7 +63,7 @@ function getTimeStamp(offset = 0) {
 
 function loadPostedTracks() {
   try {
-    const data = fs.readFileSync('postedTracks.json', 'utf8');
+    const data = fs.readFileSync(postedJson, 'utf8');
     return JSON.parse(data) || [];
   } catch (error) {
     console.log('Error loading posted tracks:', error);
@@ -64,7 +73,7 @@ function loadPostedTracks() {
 
 function savePostedTracks() {
   try {
-    fs.writeFileSync('postedTracks.json', JSON.stringify(postedTracks), 'utf8');
+    fs.writeFileSync(postedJson, JSON.stringify(postedTracks), 'utf8');
   } catch (error) {
     console.log('Error saving posted tracks:', error);
   }
