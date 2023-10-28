@@ -1,12 +1,39 @@
-require('dotenv').config();
+const dotenv =  require('dotenv');
+const fetch = require('node-fetch');
 const spotifyWebApi = require('spotify-web-api-node');
 const snoowrap = require('snoowrap');
 const google = require('googleapis');
 const fs = require('fs');
+const he = require('he');
 const stringSimilarity = require("string-similarity");
 
+const repo = 'https://github.com/aberrator9/automation';
+const localEnv = dotenv.config();
+
+function checkForEnvironmentVariables() {
+  if(!fs.existsSync('.env')){
+    const envContent = `R_CLIENT_ID=''\nR_CLIENT_SECRET=''\nR_REFRESH_TOKEN=''\nR_ACCESS_TOKEN=''\nR_USER=''\nR_PASS=''\nS_CLIENT_ID=''\nS_CLIENT_SECRET=''\nS_ACCESS_TOKEN=''\nS_REFRESH_TOKEN=''\nS_PLAYLIST=''\nY_API_KEY=''`;
+    fs.writeFileSync('.env', envContent);
+    console.log(`.env file created in local directory, but you will need to finish setting it up! See ${repo} for setup instructions.`)
+    console.log('Exiting...');
+    process.exit();
+  } else {
+    const missingValues = Object.entries(localEnv.parsed).filter(([key, value]) => value === '');
+    if(missingValues.length > 0) {
+      console.log(`.env file is missing required values! See ${repo} for setup instructions.`);
+      console.log('Exiting...');
+      process.exit();
+    }
+    else {
+      console.log('.env file found in local directory.');
+    }
+  }
+}
+
+checkForEnvironmentVariables();
+
 const reddit = new snoowrap({
-  userAgent: process.env.R_USER_AGENT,
+  userAgent: 'anything',
   clientId: process.env.R_CLIENT_ID,
   clientSecret: process.env.R_CLIENT_SECRET,
   refreshToken: process.env.R_REFRESH_TOKEN,
@@ -45,27 +72,21 @@ function savePostedTracks() {
 
 const postedTracks = loadPostedTracks();
 let cachedTracks = [];
-const MIN_SIMILARITY_THRESHOLD = 0.6;
+const STRING_SIMILARITY_THRESHOLD = 0.6;
 
 spotify.setRefreshToken(process.env.S_REFRESH_TOKEN);
 
 async function getGenre(artist) {
   try {
-    if (artist != undefined) {
-      const artistInfo = await spotify.getArtist(artist.id);
+    const artistInfo = await spotify.getArtist(artist.id);
 
-      if (artistInfo.body.genres.length > 0) {
-        return artistInfo.body.genres[0];
-      } else {
-        return 'indie'; // Funny, but probably a better solution
-      }
+    if (artistInfo.body.genres.length > 0) {
+      return artistInfo.body.genres[0];
     } else {
-      console.log('No artist provided.');
-      return '';
+      return 'indie'; // Anything that doesn't have a genre is 'indie'
     }
   } catch (error) {
     console.log('Error:', error);
-    return '';
   }
 }
 
@@ -84,7 +105,7 @@ async function refreshTracksList() {
       let temp = [];
       for (let i = 0; i < data.body.items.length; i++) {
         const track = data.body.items[i].track;
-        const artist =  track.artists[0].name;
+        const artist = track.artists[0].name;
         const id = track.id;
         const song = track.name;
 
@@ -95,7 +116,7 @@ async function refreshTracksList() {
           console.log('Adding', artist, '-', song);
 
           const genre = await getGenre(track.artists[0])
-          temp.push({postTitle: `${artist} - ${song} [${genre}] (${track.album.release_date.substring(0, 4)})`, id: id});
+          temp.push({ postTitle: `${artist} - ${song} [${genre}] (${track.album.release_date.substring(0, 4)})`, id: id });
         }
       }
       return temp;
@@ -119,7 +140,6 @@ async function searchYoutube(query) {
   const apiUrl = "https://www.googleapis.com/youtube/v3/search";
 
   const maxResults = 1;
-
   const requestUrl = `${apiUrl}?part=snippet&q=${encodeURIComponent(query)}&maxResults=${maxResults}&key=${apiKey}`;
 
   try {
@@ -128,10 +148,12 @@ async function searchYoutube(query) {
 
     if (response.ok) {
       const videos = data.items;
-      let similarity = stringSimilarity.compareTwoStrings(videos[0].snippet.title, query);
-      console.log(`Youtube returned ${videos[0].snippet.title}, has a similarity of ${similarity} to ${query}`);
 
-      if (similarity <= MIN_SIMILARITY_THRESHOLD) {
+      const titleWithoutEntities = he.decode(videos[0].snippet.title);
+      let similarity = stringSimilarity.compareTwoStrings(titleWithoutEntities.toLowerCase(), query.toLowerCase());
+      console.log(`Youtube returned ${titleWithoutEntities}, has a similarity of ${similarity} to ${query}`);
+
+      if (similarity <= STRING_SIMILARITY_THRESHOLD) {
         // Retry comparison with channel name
         const withChannelTitle = videos[0].snippet.channelTitle.split('-')[0] + '- ' + videos[0].snippet.title;
         similarity = stringSimilarity.compareTwoStrings(withChannelTitle.toLowerCase(), query.toLowerCase());
@@ -139,11 +161,7 @@ async function searchYoutube(query) {
         console.log('With channel title, new similarity score is ', similarity, withChannelTitle);
       }
 
-      if (similarity > MIN_SIMILARITY_THRESHOLD) {
-        return `https://www.youtube.com/watch?v=${videos[0].id.videoId}`;
-      } else {
-        return '';
-      }
+      return similarity > STRING_SIMILARITY_THRESHOLD ? `https://www.youtube.com/watch?v=${videos[0].id.videoId}` : '';
     } else {
       console.log(`Error: ${response.statusText}`);
     }
