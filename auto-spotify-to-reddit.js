@@ -6,6 +6,7 @@ const google = require('googleapis');
 const fs = require('fs');
 const he = require('he');
 const stringSimilarity = require("string-similarity");
+const { time } = require('console');
 
 const repo = 'https://github.com/aberrator9/automation';
 const localEnv = dotenv.config();
@@ -32,7 +33,7 @@ function checkForEnvironmentVariables() {
 
 function checkForFile(filename) {
   if(!fs.existsSync(filename)) {
-    fs.writeFileSync(filename, '[]');
+    fs.writeFileSync(filename, filename.includes('json') ? '[]' : '');
   }
   return filename;
 }
@@ -40,6 +41,8 @@ function checkForFile(filename) {
 checkForEnvironmentVariables();
 const postedJson = checkForFile('posted.json');
 const notPostedJson = checkForFile('notPosted.json');
+const logFile = checkForFile('logs/beetbot.log');
+const sessionLogFile = checkForFile(`logs/beetbot.${Date.now()}.log`);
 
 const reddit = new snoowrap({
   userAgent: 'anything',
@@ -207,7 +210,7 @@ setInterval(async () => {
     const url = await searchYoutube(cachedTrack.postTitle.split('[')[0]); // Search without genre name and year
 
     if (url != '') {
-      postRedditLink(cachedTrack.postTitle, url, 'test_automation'); // My private subreddit for testing. Request invite here:
+      postRedditLink(cachedTrack.postTitle, url, 'test_automation'); // My private subreddit for testing. Request invite here: TODO
       // ... 'Music');          // Check subreddit rules for each, fairly strict
       // ... 'listentothis');
 
