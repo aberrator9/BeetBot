@@ -13,14 +13,15 @@ const Logger = require('./modules/logger.js');
 const repo = 'https://github.com/aberrator9/automation';
 const localEnv = dotenv.config();
 
-function createFile(path, contents = '') {
-  if (!fs.existsSync(path)) fs.writeFileSync(path, contents);
+function createFile(filePath, contents = '') {
+  if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, contents);
+  return filePath;
 }
 
 const postedJson = createFile('posted.json', '[]');
 const notPostedJson = createFile('notPosted.json', '[]');
 
-const logger = new Logger('./logs/beetbot.log', `./logs/beetbot.${Date.now()}.log`);
+const logger = new Logger('./logs/beetbot.log', `./logs/beetbot.${Date.now()}.log`, false);
 
 function checkForEnvironmentVariables() {
   if (!fs.existsSync('.env')) {
