@@ -4,9 +4,9 @@ const maxSessionLogs = 3;
 const logDir = './logs';
 
 class Logger {
-    constructor(log, sessionLog) {
-        this.logFilePath = log;
-        this.sessionLogFilePath = sessionLog;
+    constructor(logFilePath, sessionLogFilePath) {
+        this.logFilePath = logFilePath;
+        this.sessionLogFilePath = sessionLogFilePath;
 
         this.createLogFile(this.logFilePath);
         this.createLogFile(this.sessionLogFilePath );

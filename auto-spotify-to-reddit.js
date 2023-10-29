@@ -13,16 +13,14 @@ const Logger = require('./modules/logger.js');
 const repo = 'https://github.com/aberrator9/automation';
 const localEnv = dotenv.config();
 
-function checkForFile(filename) {
-  if (!fs.existsSync(filename)) {
-    fs.writeFileSync(filename, filename.includes('json') ? '[]' : '');
-  }
-  return filename;
+function createFile(path, contents = '') {
+  if (!fs.existsSync(path)) fs.writeFileSync(path, contents);
 }
 
-const logFile = checkForFile('logs/beetbot.log');
-const sessionLogFile = checkForFile(`logs/beetbot.${Date.now()}.log`);
-const logger = new Logger(logFile, sessionLogFile);
+const postedJson = createFile('posted.json', '[]');
+const notPostedJson = createFile('notPosted.json', '[]');
+
+const logger = new Logger('./logs/beetbot.log', `./logs/beetbot.${Date.now()}.log`);
 
 function checkForEnvironmentVariables() {
   if (!fs.existsSync('.env')) {
@@ -42,9 +40,6 @@ function checkForEnvironmentVariables() {
 }
 
 checkForEnvironmentVariables();
-
-const postedJson = checkForFile('posted.json');
-const notPostedJson = checkForFile('notPosted.json');
 
 const reddit = new snoowrap({
   userAgent: 'anything',
