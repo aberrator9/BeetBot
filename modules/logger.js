@@ -10,8 +10,9 @@ class Logger {
         this.sessionLogFilePath = sessionLogFilePath;
         this.debug = debug;
 
-        this.createLogFile(this.logFilePath);
-        this.createLogFile(this.sessionLogFilePath);
+        if (!fs.existsSync(logDir)) fs.mkdirSync(logDir);
+        this.createFile(this.logFilePath);
+        this.createFile(this.sessionLogFilePath);
 
         this.limitSessionLogs();
     }
@@ -28,7 +29,7 @@ class Logger {
         });
     }
 
-    createLogFile(path) {
+    createFile(path) {
         if (!fs.existsSync(path)) fs.writeFileSync(path, '');
     }
 
