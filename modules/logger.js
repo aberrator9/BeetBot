@@ -1,7 +1,8 @@
 const fs = require('fs');
+const colors = require('colors');
 
 const logDir = './logs';
-const maxSessionLogs = 3;
+const maxSessionLogs = 1;
 
 class Logger {
     constructor(logFilePath, sessionLogFilePath, debug = false) {
@@ -31,11 +32,16 @@ class Logger {
         if (!fs.existsSync(path)) fs.writeFileSync(path, '');
     }
 
-    log(msg) {
+    log(level, msg) {
         fs.appendFileSync(this.logFilePath, msg + '\n');
         fs.appendFileSync(this.sessionLogFilePath, msg + '\n');
-        
-        if (this.debug) console.log(msg);
+
+        if (level === 'err') console.log(msg.red);
+        else if (level === 'warn') console.log(msg.yellow);
+        else if (this.debug) {
+            if (level === 'success') console.log(msg.green);
+            else console.log(msg);
+        }
     }
 }
 
