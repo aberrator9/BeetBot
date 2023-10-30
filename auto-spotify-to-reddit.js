@@ -6,7 +6,6 @@ const google = require('googleapis');
 const fs = require('fs');
 const he = require('he');
 const stringSimilarity = require("string-similarity");
-const { time } = require('console');
 
 const Logger = require('./modules/logger.js');
 
@@ -28,12 +27,12 @@ function checkForEnvironmentVariables() {
   if (!fs.existsSync('.env')) {
     const envContent = `R_CLIENT_ID=''\nR_CLIENT_SECRET=''\nR_REFRESH_TOKEN=''\nR_ACCESS_TOKEN=''\nR_USER=''\nR_PASS=''\nS_CLIENT_ID=''\nS_CLIENT_SECRET=''\nS_ACCESS_TOKEN=''\nS_REFRESH_TOKEN=''\nS_PLAYLIST=''\nY_API_KEY=''`;
     fs.writeFileSync('.env', envContent);
-    logger.log('warn',`.env file created in local directory, but you will need to finish setting it up! See ${repo} for setup instructions.\nExiting...`)
+    logger.log('warn', `.env file created in local directory, but you will need to finish setting it up! See ${repo} for setup instructions.\nExiting...`)
     process.exit();
   } else {
     const missingValues = Object.entries(localEnv.parsed).filter(([key, value]) => value === '');
     if (missingValues.length > 0) {
-      logger.log('warn',`.env file is missing required values! See ${repo} for setup instructions.\nExiting...`);
+      logger.log('warn', `.env file is missing required values! See ${repo} for setup instructions.\nExiting...`);
       process.exit();
     }
   }
@@ -61,25 +60,26 @@ function getTimeStamp(offset = 0) {
   return new Date(Date.now() + offset).toLocaleString();
 }
 
-function loadPostedTracks() {
+function loadTracks(json) {
   try {
-    const data = fs.readFileSync(postedJson, 'utf8');
+    const data = fs.readFileSync(json, 'utf8');
     return JSON.parse(data) || [];
   } catch (error) {
-    logger.log('err',`Error loading posted tracks: ${error}`);
+    logger.log('err', `Error loading tracks from ${json}: ${error}`);
     return [];
   }
 }
 
-function savePostedTracks() {
+function saveTracks(json, arr) {
   try {
-    fs.writeFileSync(postedJson, JSON.stringify(postedTracks), 'utf8');
+    fs.writeFileSync(json, JSON.stringify(arr), 'utf8');
   } catch (error) {
-    logger.log('err',`Error saving posted tracks: ${error}`);
+    logger.log('err', `Error saving posted tracks: ${error}`);
   }
 }
 
-const postedTracks = loadPostedTracks();
+const postedTracks = loadTracks(postedJson);
+const notPostedTracks = loadTracks(notPostedJson);
 let cachedTracks = [];
 const STRING_SIMILARITY_THRESHOLD = 0.6;
 
@@ -95,7 +95,7 @@ async function getGenre(artist) {
       return 'indie'; // Anything that doesn't have a genre is 'indie'
     }
   } catch (err) {
-    logger.log('err',`Error getting genre: ${err}`);
+    logger.log('err', `Error getting genre: ${err}`);
   }
 }
 
@@ -105,7 +105,7 @@ async function refreshTracksList() {
       spotify.setAccessToken(data.body['access_token']);
     },
     function (err) {
-      logger.log('err',`Could not refresh access token: ${err}`);
+      logger.log('err', `Could not refresh access token: ${err}`);
     }
   );
 
@@ -118,11 +118,11 @@ async function refreshTracksList() {
         const id = track.id;
         const song = track.name;
 
-        if (cachedTracks.includes(id) || postedTracks.includes(id)) {
-          logger.log('info',`Track ${artist} - ${song} already posted; removing from playlist.`);
+        if (cachedTracks.includes(id) || postedTracks.includes(id) || notPostedTracks.some(inner => inner[0] === id)) {
+          logger.log('warn', `Track ${artist} - ${song} already posted or previously failed to post (notPosted.json); removing from playlist.`);
           await removeTrackFromPlaylist(process.env.S_PLAYLIST, id);
         } else {
-          logger.log('info',`Adding ${artist} - ${song}`);
+          logger.log('info', `Adding ${artist} - ${song}`);
 
           const genre = await getGenre(track.artists[0])
           temp.push({ postTitle: `${artist} - ${song} [${genre}] (${track.album.release_date.substring(0, 4)})`, id: id });
@@ -131,7 +131,7 @@ async function refreshTracksList() {
       return temp;
     },
     function (err) {
-      logger.log('err',err);
+      logger.log('err', err);
     }
   );
 }
@@ -140,7 +140,7 @@ async function removeTrackFromPlaylist(playlistId, trackId) {
   try {
     await spotify.removeTracksFromPlaylist(playlistId, [{ uri: `spotify:track:${trackId}` }]);
   } catch (err) {
-    logger.log('err',`Error removing track: ${err}`);
+    logger.log('err', `Error removing track: ${err}`);
   }
 }
 
@@ -160,22 +160,21 @@ async function searchYoutube(query) {
 
       const titleWithoutEntities = he.decode(videos[0].snippet.title);
       let similarity = stringSimilarity.compareTwoStrings(titleWithoutEntities.toLowerCase(), query.toLowerCase());
-      logger.log('info',`Youtube returned ${titleWithoutEntities}, has a similarity of ${similarity} to ${query}`);
+      logger.log('info', `Youtube returned ${titleWithoutEntities}, has a similarity of ${similarity} to ${query}`);
 
       if (similarity <= STRING_SIMILARITY_THRESHOLD) {
-        // Retry comparison with channel name
+        // Retry comparison with channel name, minus '- Topic' for autogenerated music channels
         const withChannelTitle = videos[0].snippet.channelTitle.split('-')[0] + '- ' + videos[0].snippet.title;
         similarity = stringSimilarity.compareTwoStrings(withChannelTitle.toLowerCase(), query.toLowerCase());
-        // Check with channel title, minus '- Topic' for autogenerated music channels
-        logger.log('info',`With channel title, new similarity score is ${similarity}: ${withChannelTitle}`);
+        logger.log('info', `With channel title, new similarity score is ${similarity}: ${withChannelTitle}`);
       }
 
       return similarity > STRING_SIMILARITY_THRESHOLD ? `https://www.youtube.com/watch?v=${videos[0].id.videoId}` : '';
     } else {
-      logger.log('err',`Error: ${response.statusText}`);
+      logger.log('err', `Error: ${response.statusText}`);
     }
   } catch (error) {
-    logger.log('err','Error fetching data:', error);
+    logger.log('err', 'Error fetching data:', error);
   }
 }
 
@@ -187,17 +186,25 @@ function postRedditLink(title, link, subreddit) {
   });
 }
 
+const initialWait = 15000;
 // const postInterval = 28800000; // 8 hrs
-const postInterval = 5000;
+const postingInterval = 5000;
 
-setInterval(async () => {
+setTimeout(async () => {
+  logger.log('success', `Script started at ${getTimeStamp()}; first post will occur at ${getTimeStamp(postingInterval).toLocaleString()} plus a random amount < 1 hr.`);
+  await main();
 
+  setInterval(main, postingInterval);
+  // setInterval(main, postInterval + Math.floor(Math.random() * 3600000));
+}, initialWait);
+
+async function main() {
   if (cachedTracks.length <= 0) {
     cachedTracks = await refreshTracksList();
   }
 
   if (cachedTracks.length <= 0) {
-    logger.log('info',`[${getTimeStamp()}] No new tracks to post! Trying again at ${getTimeStamp(postInterval).toLocaleString()}`)
+    logger.log('info', `[${getTimeStamp()}] No new tracks to post! Trying again at ${getTimeStamp(postingInterval).toLocaleString()}`)
     return;
   }
 
@@ -207,22 +214,26 @@ setInterval(async () => {
     const url = await searchYoutube(cachedTrack.postTitle.split('[')[0]); // Search without genre name and year
 
     if (url != '') {
-      postRedditLink(cachedTrack.postTitle, url, testSubreddit);  
+      postRedditLink(cachedTrack.postTitle, url, testSubreddit);
       // ... 'Music');                                           
       // ... 'listentothis');
 
-      logger.log('success',`[${getTimeStamp()}] Posted ${cachedTrack.postTitle} from ${url}`);
+      logger.log('success', `[${getTimeStamp()}] Posted ${cachedTrack.postTitle} from ${url}`);
 
       postedTracks.push(cachedTrack.id);
-      savePostedTracks();
+      saveTracks(postedJson, postedTracks);
+    } else {
+      logger.log('warn', `[${getTimeStamp()}] Failed to post ${cachedTrack.postTitle}; adding to notPosted.json`);
+
+      notPostedTracks.push([cachedTrack.id, cachedTrack.postTitle, url]);
+      saveTracks(notPostedJson, notPostedTracks);
     }
   } else {
-    logger.log('warn',`Track ${cachedTrack.postTitle} already posted; removing from playlist.`)
+    logger.log('warn', `Track ${cachedTrack.postTitle} already posted; removing from playlist.`)
   }
 
   removeTrackFromPlaylist(process.env.S_PLAYLIST, cachedTrack.id);
   cachedTracks.pop();
-}, postInterval);
-// }, postInterval + Math.floor(Math.random() * 3600000));
+}
 
-logger.log('success',`Script started at ${getTimeStamp()}; first post will occur at ${getTimeStamp(postInterval).toLocaleString()} plus a random amount < 1 hr.`);
+logger.log('info', `Waiting ${initialWait / 1000} seconds to start...`);
