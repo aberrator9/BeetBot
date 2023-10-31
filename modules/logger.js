@@ -38,9 +38,9 @@ class Logger {
         fs.appendFileSync(this.sessionLogFilePath, msg + '\n');
 
         if (level === 'err') console.log(msg.red);
-        else if (level === 'warn') console.log(msg.yellow);
         else if (this.debug) {
-            if (level === 'success') console.log(msg.green);
+            if (level === 'warn') console.log(msg.yellow);
+            else if (level === 'success') console.log(msg.green);
             else console.log(msg);
         }
     }

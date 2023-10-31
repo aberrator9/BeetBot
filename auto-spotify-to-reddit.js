@@ -186,16 +186,18 @@ function postRedditLink(title, link, subreddit) {
   });
 }
 
+// const initialWait = 0;
 const initialWait = 15000;
-// const postInterval = 28800000; // 8 hrs
-const postingInterval = 5000;
+const postingInterval = 28800000; // 8 hrs
+// const postingInterval = 5000;
+let fuzzTime = 3600000; // 1 hr
+fuzzTime = Math.abs(fuzzTime);
 
 setTimeout(async () => {
-  logger.log('success', `Script started at ${getTimeStamp()}; first post will occur at ${getTimeStamp(postingInterval).toLocaleString()} plus a random amount < 1 hr.`);
   await main();
 
   setInterval(main, postingInterval);
-  // setInterval(main, postInterval + Math.floor(Math.random() * 3600000));
+  // setInterval(main, postInterval + Math.floor(Math.random() * fuzzTime));
 }, initialWait);
 
 async function main() {
@@ -236,4 +238,6 @@ async function main() {
   cachedTracks.pop();
 }
 
-logger.log('info', `Waiting ${initialWait / 1000} seconds to start...`);
+logger.log('success', (`Posting interval set to ${postingInterval / 1000 / 60 / 60} hour(s)`
+  + (fuzzTime > 0 ? ` plus a random amount < ${Math.ceil(fuzzTime / 1000 / 60)} minute(s).` : '.')
+  + ` Waiting ${ initialWait / 1000} seconds before first post...`));
