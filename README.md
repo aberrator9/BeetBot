@@ -4,7 +4,7 @@
   <img src="https://github.com/aberrator9/BeetBot/assets/127802772/c024c82a-4086-42db-8e46-0078bfc49f92" style="width:132px;">
 </div>
 <p></p>
-<p>Automatically post music from a Spotify playlist to Reddit.</p>
+<p>Automatically post music from a Spotify playlist to Reddit. Built with NodeJS.</p>
 
 ## Usage
 Coming soon!
