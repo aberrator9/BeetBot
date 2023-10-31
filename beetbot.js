@@ -9,7 +9,7 @@ const stringSimilarity = require("string-similarity");
 
 const Logger = require('./modules/logger.js');
 
-const repo = 'https://github.com/aberrator9/automation';
+const repo = 'https://github.com/aberrator9/BeetBot';
 const testSubreddit = 'test_automation';
 const localEnv = dotenv.config();
 
