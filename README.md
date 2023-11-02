@@ -1,4 +1,4 @@
-<img src="https://github.com/aberrator9/BeetBot/assets/127802772/77100304-871b-43b6-8e3e-758404ef0cfe" align="center" style="max-width:60vw;">
+<img src="https://github.com/aberrator9/BeetBot/assets/127802772/77100304-871b-43b6-8e3e-758404ef0cfe" style="width:50%;">
 
 <p></p>
 <p>Automatically post music from a Spotify playlist to Reddit.</p>
