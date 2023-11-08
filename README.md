@@ -46,7 +46,24 @@ Copy the value that is in place of _PLAYLIST_ID_ to the `S_PLAYLIST` key in the 
 
 ### Connect the Reddit API
 
-Coming soon!
+1. Copy your reddit username and password to the `R_USER` and `R_PASS` values in the `.env`.
+2. Go to the [Reddit API page](https://www.reddit.com/prefs/apps) and create a new app, pasting the following into the _redirect URI_ field:
+
+```
+https://not-an-aardvark.github.io/reddit-oauth-helper/
+```
+
+3. On the Reddit app preferences page, locate your app's _Client Id_. This should be a code written under the name of your app, as highlighted in this screenshot:
+
+![reddit-client-id](https://github.com/aberrator9/BeetBot/assets/127802772/f3aba656-1625-4619-95c1-cc061b3f7f3d)
+
+4. Copy this value, along with the _secret_ value from the preference page to the `R_CLIENT_ID` and `R_CLIENT_SECRET` fields of the `.env` file.
+5. Open [Reddit OAuth Helper](https://not-an-aardvark.github.io/reddit-oauth-helper/), copy the previous values to the matching fields, check your desired scopes (you can just check all), check _Permanent_, and click _Generate tokens_.
+
+(_Note: The Reddit OAuth Helper page may not work on certain browsers; if it says "loading..." for more than a few seconds, try another browser._)
+
+6. When prompted, click _Allow_ to connect the app to your Reddit account.
+7. Back on the Reddit OAuth Helper page, copy the newly generated _Refresh token_ and _Access token_ values to the `R_REFRESH_TOKEN` and `R_ACCESS_TOKEN` fields in the `.env`.
 
 ## Usage
 
@@ -63,6 +80,6 @@ forever start beetbot.js
 
 (Remember to include the operation of this script in your will, in case it continues to run after you have passed away.)
 
-That's it! Now any time you add a song to your Spotify playlist, it will get posted to Reddit. Don't worry about accidentally adding songs you've already posted; BeetBot will remember that for you and skip them automatically! It will also keep a list of songs for which it failed to find a reliable match on YouTube (see `notPosted.json`), in case you want to post those manually later.
+That's it (_phew_)! Now any time you add a song to your Spotify playlist, it will get posted to Reddit. Don't worry about accidentally adding songs you've already posted; BeetBot will remember that for you and skip them automatically! It will also keep a list of songs for which it failed to find a reliable match on YouTube (see `notPosted.json`), in case you want to post those manually later.
 
 Happy posting!
