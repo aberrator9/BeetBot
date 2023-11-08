@@ -40,7 +40,9 @@ Copy the value that is in place of _PLAYLIST_ID_ to the `S_PLAYLIST` key in the 
 
 ### Connect the YouTube API
 
-Coming soon!
+1. Log into the [Google Cloud console](https://console.cloud.google.com/projectselector2/apis/dashboard) and create a new project.
+2. Click the _Enable APIs and Services_ button, then scroll down and click on _YouTube Data API v3._ On the next page, click _Enable._
+3. On the YouTube Data API v3 page, click _Create credentials._ On the next page, select _Public Data,_ and click _Next_. Copy the API key value then click _Done_. Paste the API key in the `Y_API_KEY` field in the `.env`.
 
 ### Connect the Reddit API
 
