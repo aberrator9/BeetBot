@@ -1,13 +1,13 @@
 <img src="https://github.com/aberrator9/BeetBot/assets/127802772/77100304-871b-43b6-8e3e-758404ef0cfe" style="width:50%;">
 
 <p></p>
-<p>Automatically post music from a Spotify playlist to Reddit.</p>
+<p>Automatically post music from a Spotify playlist to Reddit!</p>
 
+Any tracks added to a user-specified playlist will be periodically posted to a subreddit of choice. Beetbot pulls all relevant info about a track from Spotify, then uses a string comparison algorithm (npm string-similarity) to find a matching YouTube link, and posts it to Reddit using title formatting that is the convention for most music subreddits: `Artist - Title [genre] (year)`. Posts occur on a scheduled interval (default 8 hours) and include optional "fuzzing," or randomized delay to make post times appear more organic.
 
-Any tracks added to a user-specified playlist will be periodically posted to subreddit(s) of choice. Includes optional "fuzzing," or randomized delay to make posts appear more organic.
+Don't worry about accidentally adding songs you've already posted; BeetBot will remember that for you and skip them automatically! It will also keep a list of songs for which it failed to find a reliable match on YouTube (see `notPosted.json`), in case you want to post those manually later.
 
-Uses NodeJS with the Spotify, Google, and Reddit APIs.
-
+Built with NodeJS and the Spotify, Google, and Reddit APIs.
 
 ## Setup and run locally
 
@@ -67,7 +67,8 @@ https://not-an-aardvark.github.io/reddit-oauth-helper/
 
 ## Usage
 
-Start the script with `node beetbot.js`, and it will run continuously, attempting to post every time the posting interval has elapsed.
+1. Set your target subreddit and post interval in the `.env` file.
+2. Start the script with `node beetbot.js`, and it will run continuously, attempting to post every time the posting interval has elapsed.
 
 Optionally, use something like [Forever](https://www.npmjs.com/package/forever) to ensure that the script runs _forever_ and is restarted in the event of a crash.
 
@@ -80,6 +81,6 @@ forever start beetbot.js
 
 (Remember to include the operation of this script in your will, in case it continues to run after you have passed away.)
 
-That's it (_phew_)! Now any time you add a song to your Spotify playlist, it will get posted to Reddit. Don't worry about accidentally adding songs you've already posted; BeetBot will remember that for you and skip them automatically! It will also keep a list of songs for which it failed to find a reliable match on YouTube (see `notPosted.json`), in case you want to post those manually later.
+That's it (_phew_)! Now any time you add a song to your Spotify playlist, it will get posted to Reddit.
 
 Happy posting!
