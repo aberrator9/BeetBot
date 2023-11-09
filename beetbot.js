@@ -10,7 +10,6 @@ const stringSimilarity = require("string-similarity");
 const Logger = require('./modules/logger.js');
 
 const repo = 'https://github.com/aberrator9/BeetBot';
-const testSubreddit = 'test_automation';
 const localEnv = dotenv.config();
 
 function createFile(filePath, contents = '') {
@@ -25,7 +24,7 @@ const logger = new Logger('./logs/beetbot.log', `./logs/beetbot.${Date.now()}.lo
 
 function checkForEnvironmentVariables() {
   if (!fs.existsSync('.env')) {
-    const envContent = `R_CLIENT_ID=''\nR_CLIENT_SECRET=''\nR_REFRESH_TOKEN=''\nR_ACCESS_TOKEN=''\nR_USER=''\nR_PASS=''\nS_CLIENT_ID=''\nS_CLIENT_SECRET=''\nS_ACCESS_TOKEN=''\nS_REFRESH_TOKEN=''\nS_PLAYLIST=''\nY_API_KEY=''`;
+    const envContent = `# KEYS AND SECRETS\nR_CLIENT_ID=''\nR_CLIENT_SECRET=''\nR_REFRESH_TOKEN=''\nR_ACCESS_TOKEN=''\nR_USER=''\nR_PASS=''\nS_CLIENT_ID=''\nS_CLIENT_SECRET=''\nS_ACCESS_TOKEN=''\nS_REFRESH_TOKEN=''\nS_PLAYLIST=''\nY_API_KEY=''\n\n# VARIABLES\n# https://www.reddit.com/r/test_automation is a public subreddit\n# Feel free to use it for testing BeetBot's output!\nTARGET_SUBREDDIT='test_automation'\n\n# Time between posts in milliseconds\nPOSTING_INTERVAL=28800000; # 8 hrs\n\n# Random amount between zero and FUZZ_TIME added to POSTING_INTERVAL to emulate organic posting\nFUZZ_TIME=3600000 # 1 hr\n\n# Set to 'false' to log to file; 'true' to log to console and file\nDEBUG='true'`;
     fs.writeFileSync('.env', envContent);
     logger.log('warn', `.env file created in local directory, but you will need to finish setting it up! See ${repo} for setup instructions.\nExiting...`)
     process.exit();
@@ -186,18 +185,16 @@ function postRedditLink(title, link, subreddit) {
   });
 }
 
-// const initialWait = 0;
 const initialWait = 15000;
-const postingInterval = 28800000; // 8 hrs
-// const postingInterval = 5000;
-let fuzzTime = 3600000; // 1 hr
+
+const targetSubreddit = process.env.TARGET_SUBREDDIT;
+const postingInterval = parseInt(process.env.POSTING_INTERVAL);
+let fuzzTime = parseInt(process.env.FUZZ_TIME);
 fuzzTime = Math.abs(fuzzTime);
 
 setTimeout(async () => {
   await main();
-
-  setInterval(main, postingInterval);
-  // setInterval(main, postInterval + Math.floor(Math.random() * fuzzTime));
+  setInterval(main, postingInterval + Math.floor(Math.random() * fuzzTime));
 }, initialWait);
 
 async function main() {
@@ -216,10 +213,7 @@ async function main() {
     const url = await searchYoutube(cachedTrack.postTitle.split('[')[0]); // Search without genre name and year
 
     if (url != '') {
-      postRedditLink(cachedTrack.postTitle, url, testSubreddit);
-      // ... 'Music');                                           
-      // ... 'listentothis');
-
+      postRedditLink(cachedTrack.postTitle, url, targetSubreddit);
       logger.log('success', `[${getTimeStamp()}] Posted ${cachedTrack.postTitle} from ${url}`);
 
       postedTracks.push(cachedTrack.id);

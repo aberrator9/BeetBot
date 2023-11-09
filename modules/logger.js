@@ -2,7 +2,7 @@ const fs = require('fs');
 const colors = require('colors');
 
 const logDir = './logs';
-const maxSessionLogs = 1;
+const maxSessionLogs = 3;
 
 class Logger {
     constructor(logFilePath, sessionLogFilePath, debug = false) {
