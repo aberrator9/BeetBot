@@ -3,7 +3,7 @@
 <p></p>
 <p>Automatically post music from a Spotify playlist to Reddit!</p>
 
-Any tracks added to a user-specified playlist will be periodically posted to a subreddit of choice. Beetbot pulls all relevant info about a track from Spotify, then uses a string comparison algorithm (npm string-similarity) to find a matching YouTube link, and posts it to Reddit using title formatting that is the convention for most music subreddits: `Artist - Title [genre] (year)`. Posts occur on a scheduled interval (default 8 hours) and include optional "fuzzing," or randomized delay to make post times appear more organic.
+Any tracks added to a user-specified playlist will be periodically posted to a subreddit of choice. BeetBot pulls all relevant info about a track from Spotify, then uses a string comparison algorithm (npm string-similarity) to find a matching YouTube link, and posts it to Reddit using title formatting that is the convention for most music subreddits: `Artist - Title [genre] (year)`. Posts occur on a scheduled interval (default 8 hours) and include optional "fuzzing," or randomized delay to make post times appear more organic.
 
 Don't worry about accidentally adding songs you've already posted; BeetBot will remember that for you and skip them automatically! It will also keep a list of songs for which it failed to find a reliable match on YouTube (see `notPosted.json`), in case you want to post those manually later.
 
