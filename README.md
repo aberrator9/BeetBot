@@ -18,11 +18,11 @@ npm install
 node beetbot.js
 ```
 
-This will install all  node dependencies, and BeetBot will create some required files, as well as a `/logs` directory, and an `.env` file with some default keys that we will assign values in the following steps.
+This will install all Node dependencies and create some required files, as well as a `/logs` directory, and an `.env` file with some default keys that we will assign values in the following steps.
 
 ### Connect and authorize a Spotify App
 
-1. [Create a Spotify app](https://developer.spotify.com/dashboard). During setup, set the Redirect URI to http://localhost:8888/callback, and check the "Web API" boxes.
+1. [Create a Spotify app](https://developer.spotify.com/dashboard). During setup, set the Redirect URI to http://localhost:8888/callback, and check the "Web API" box.
 2. Navigate to your app's settings, and copy the _Client Id_ and _Client Secret_ values to `S_CLIENT_ID` and `S_CLIENT_SECRET` in the `.env` file.
 3. In your terminal, run the following from the project directory:
 ```
@@ -36,7 +36,7 @@ node authorize-spotify.js
 https://open.spotify.com/playlist/PLAYLIST_ID
 ``` 
 
-Copy the value that is in place of _PLAYLIST_ID_ to the `S_PLAYLIST` key in the `.env`.
+Copy the value in place of _PLAYLIST_ID_ to the `S_PLAYLIST` key in the `.env`.
 
 ### Connect the YouTube API
 
@@ -46,7 +46,7 @@ Copy the value that is in place of _PLAYLIST_ID_ to the `S_PLAYLIST` key in the 
 
 ### Connect the Reddit API
 
-1. Copy your reddit username and password to the `R_USER` and `R_PASS` values in the `.env`.
+1. Copy the Reddit username and password for the account you wish to use to the `R_USER` and `R_PASS` values in the `.env`.
 2. Go to the [Reddit API page](https://www.reddit.com/prefs/apps) and create a new app, pasting the following into the _redirect URI_ field:
 
 ```
